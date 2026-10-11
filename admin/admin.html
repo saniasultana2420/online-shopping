@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Owner Panel – FrozenMart</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--leaf:#1f6f4a;--ink:#1b2a22;--mist:#eef4ef;--line:#d9e4dc;--mango:#f2b632;--red:#b00020;--warn:#b4531a}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Figtree',sans-serif;color:var(--ink);background:var(--mist);padding-top:env(safe-area-inset-top,0)}
+header{background:var(--ink);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header b{font-family:'Bricolage Grotesque',sans-serif;font-size:1.3rem}
+header a{color:#fff;font-size:.9rem}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+h2{font-family:'Bricolage Grotesque',sans-serif;margin:28px 0 10px;font-size:1.3rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat small{color:#5c7266;display:block}.stat strong{font-size:1.7rem;font-family:'Bricolage Grotesque',sans-serif}
+.alert{background:#fff3e0;border:1px solid #f0b36b;color:#7a3a00;border-radius:12px;padding:12px 16px;margin-top:14px}
+.alert.ok{background:#e6f4ea;border-color:#9ccfad;color:#14502e}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 14px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:.93rem;vertical-align:middle}
+th{color:#5c7266;font-weight:600}tr:last-child td{border-bottom:0}
+input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+td input[type=number]{width:90px}
+.tag{padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:600}
+.t-ok{background:#e6f4ea;color:#14502e}.t-low{background:#fff3e0;color:var(--warn)}.t-out{background:#fde7ea;color:var(--red)}
+form.add{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;align-items:end}
+form.add label{font-size:.85rem;color:#5c7266;display:flex;flex-direction:column;gap:4px}
+button{font:inherit;font-weight:600;background:var(--leaf);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hide{display:none!important}
+#gate{max-width:380px;margin:60px auto;padding:0 16px}
+#gate form{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:12px}
+#gate label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:#5c7266}
+#gate .err{color:var(--red);min-height:20px;font-size:.9rem;font-weight:600}
+#logout{background:none;border:1px solid #fff;color:#fff;padding:5px 12px}
+
+/* DARK THEME (delete this block to go back to light) */
+:root{color-scheme:dark;--bg:#0f1c2b;--surface:#172a3f;--surface2:#1d3450;--line:#2b4560;--text:#e8f0f7;--muted:#9fb3c6;--green:#3ddc97}
+body{background:var(--bg);color:var(--text)}
+header{background:#0a1522;border-bottom:1px solid var(--line)}
+.stat,.card,form.add,#gate form{background:var(--surface);border-color:var(--line)}
+.stat small,th,form.add label,#gate label{color:var(--muted)}
+th,td{border-color:var(--line)}
+input,select{background:var(--bg);color:var(--text);border-color:var(--line)}
+.alert{background:#4a3417;border-color:#8a5a22;color:#ffc27a}
+.alert.ok{background:#14452f;border-color:#2b7a55;color:#7ff0b8}
+.t-ok{background:#14452f;color:#7ff0b8}.t-low{background:#4a3417;color:#ffc27a}.t-out{background:#4a1f28;color:#ff9aa6}
+#gate .err{color:#ff8a98}
+a{color:var(--green)}header a{color:#fff}
+</style>
+</head>
+<body>
+<header><b>❄ FrozenMart Owner Panel</b><span><a href="index.html">← Customer site</a> <button id="logout" class="hide" type="button">Log out</button></span></header>
+<div id="gate">
+  <form id="gateForm">
+    <h2 style="margin:0">Owner login</h2>
+    <label>Email<input id="aEmail" type="email" autocomplete="username" required></label>
+    <label>Password<input id="aPw" type="password" autocomplete="current-password" required></label>
+    <div class="err" id="aErr" role="alert"></div>
+    <button type="submit">Log in</button>
+  </form>
+</div>
+<main id="app" class="hide">
+  <div class="stats" id="stats"></div>
+  <div id="alert"></div>
+
+  <h2>🛎 Orders</h2>
+  <div class="card scroll"><table><thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div>
+
+  <h2>📦 Products &amp; Stock</h2>
+  <div class="row" style="margin-bottom:8px"><label>Low-stock alert at: <input type="number" id="limit" value="5" min="0" style="width:70px"></label></div>
+  <div class="card scroll"><table><thead><tr><th>Product</th><th>Pack</th><th>Price ৳</th><th>Stock</th><th>Sold</th><th></th></tr></thead><tbody id="products"></tbody></table></div>
+
+  <h2>➕ Add product</h2>
+  <form class="add" id="addForm">
+    <label>Name<input id="fName" required placeholder="Homemade Singara"></label>
+    <label>Pack<input id="fPack" required placeholder="12 pcs"></label>
+    <label>Price ৳<input id="fPrice" type="number" min="1" required></label>
+    <label>Stock<input id="fStock" type="number" min="0" required></label>
+    <button type="submit">Add</button>
+  </form>
+</main>
+<script>
+// Demo data in memory only. Later PHP + MySQL will store this.
+const products=[
+ {id:1,name:"Frozen Paratha",pack:"20 pcs",price:320,stock:50},
+ {id:2,name:"Chicken Nuggets",pack:"500 g",price:420,stock:40},
+ {id:3,name:"Homemade Samosa",pack:"12 pcs",price:280,stock:4},
+ {id:4,name:"Singara (Veg)",pack:"12 pcs",price:260,stock:3},
+ {id:5,name:"Chicken Spring Roll",pack:"10 pcs",price:340,stock:25},
+ {id:6,name:"Beef Seekh Kebab",pack:"400 g",price:520,stock:0},
+ {id:7,name:"Veg Spring Roll",pack:"10 pcs",price:260,stock:35},
+ {id:8,name:"Beef Burger Patty",pack:"6 pcs",price:480,stock:18},
+ {id:9,name:"Chicken Momo",pack:"12 pcs",price:280,stock:35},
+ {id:10,name:"Veg Momo",pack:"12 pcs",price:220,stock:30},
+ {id:11,name:"Fuchka Puri",pack:"50 pcs",price:180,stock:40},
+ {id:12,name:"Snack Mix Package",pack:"30 pcs mix",price:590,stock:20},
+ {id:13,name:"Family Mix Package",pack:"60 pcs mix",price:1090,stock:12},
+ {id:14,name:"Fresh Milk",pack:"1 L",price:90,stock:20}];
+const orders=[
+ {id:1004,c:"Sania Akter",items:[[1,2,320],[2,1,420]],s:"Pending",pm:"bKash",trx:"8N7A6D5EE3",ps:"Verifying"},
+ {id:1003,c:"Rahim Uddin",items:[[3,3,280]],s:"Confirmed",pm:"Cash on Delivery",trx:"",ps:"Unpaid"},
+ {id:1002,c:"Mitu Das",items:[[5,2,340],[7,1,260]],s:"Delivered",pm:"Card",trx:"",ps:"Paid"},
+ {id:1001,c:"Karim Hossain",items:[[6,1,520],[8,2,480]],s:"Shipped",pm:"bKash",trx:"9K2L4M6P8Q",ps:"Paid"},
+ {id:1000,c:"Nasrin Begum",items:[[4,2,260]],s:"Cancelled",pm:"Cash on Delivery",trx:"",ps:"Unpaid"}];
+const PS={Unpaid:"Unpaid",Verifying:"Verify",Paid:"Paid"};
+const ST={Pending:"Pending",Confirmed:"Confirmed",Processing:"Processing",Shipped:"Shipped",Delivered:"Delivered",Cancelled:"Cancelled"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const limit=()=>Number($("limit").value)||0;
+const total=o=>o.items.reduce((a,i)=>a+i[1]*i[2],0);
+const live=()=>orders.filter(o=>o.s!=="Cancelled");
+const sold=id=>live().reduce((a,o)=>a+o.items.filter(i=>i[0]===id).reduce((b,i)=>b+i[1],0),0);
+
+function render(){
+  const low=products.filter(p=>p.stock<=limit());
+  const revenue=live().reduce((a,o)=>a+total(o),0), units=live().reduce((a,o)=>a+o.items.reduce((b,i)=>b+i[1],0),0);
+  $("stats").innerHTML=[["Total sales","৳"+revenue],["Orders",orders.length],["Pending",orders.filter(o=>o.s==="Pending").length],["Packets sold",units],["Payments to verify",orders.filter(o=>o.ps==="Verifying").length]]
+    .map(s=>`<div class="stat"><small>${s[0]}</small><strong>${s[1]}</strong></div>`).join("");
+  $("alert").innerHTML=low.length
+    ?`<div class="alert">⚠ <b>Low stock:</b> ${low.map(p=>esc(p.name)+" ("+p.stock+")").join(", ")}</div>`
+    :`<div class="alert ok">✓ All stock is fine</div>`;
+  $("orders").innerHTML=orders.map(o=>`<tr><td>#${o.id}</td><td>${esc(o.c)}</td>
+    <td>${o.items.map(i=>esc(products.find(p=>p.id===i[0]).name)+" × "+i[1]).join("<br>")}</td><td>৳${total(o)}</td>
+    <td>${esc(o.pm)}${o.trx?"<br><small>TrxID: "+esc(o.trx)+"</small>":""}<br><select data-pay="${o.id}">${Object.keys(PS).map(k=>`<option value="${k}" ${k===o.ps?"selected":""}>${PS[k]}</option>`).join("")}</select></td>
+    <td><select data-order="${o.id}">${Object.keys(ST).map(k=>`<option value="${k}" ${k===o.s?"selected":""}>${ST[k]}</option>`).join("")}</select></td></tr>`).join("");
+  $("products").innerHTML=products.map(p=>{
+    const cls=p.stock===0?"t-out":p.stock<=limit()?"t-low":"t-ok", txt=p.stock===0?"Out":p.stock<=limit()?"Low":"OK";
+    return `<tr><td>${esc(p.name)}</td><td>${esc(p.pack)}</td>
+    <td><input type="number" min="0" value="${p.price}" data-price="${p.id}"></td>
+    <td><input type="number" min="0" value="${p.stock}" data-stock="${p.id}"></td>
+    <td>${sold(p.id)}</td><td><span class="tag ${cls}">${txt}</span></td></tr>`}).join("");
+}
+document.addEventListener("change",e=>{
+  const t=e.target, v=Math.max(0,Number(t.value)||0);
+  if(t.dataset.order){orders.find(o=>o.id==t.dataset.order).s=t.value}
+  else if(t.dataset.pay){orders.find(o=>o.id==t.dataset.pay).ps=t.value}
+  else if(t.dataset.price){products.find(p=>p.id==t.dataset.price).price=v}
+  else if(t.dataset.stock){products.find(p=>p.id==t.dataset.stock).stock=v}
+  else if(t.id!=="limit")return;
+  render();
+});
+$("addForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  products.push({id:Date.now(),name:$("fName").value.trim(),pack:$("fPack").value.trim(),price:Number($("fPrice").value),stock:Number($("fStock").value)});
+  e.target.reset();render();
+});
+// DEMO login only: this check runs in the browser, so it is NOT real security.
+// In the PHP version the password is checked on the server (password_verify).
+const ADMIN_EMAIL="admin@frozenmart.com", ADMIN_PASS="admin123";
+function setAuth(on){
+  $("gate").classList.toggle("hide",on);$("app").classList.toggle("hide",!on);$("logout").classList.toggle("hide",!on);
+  try{on?sessionStorage.setItem("fm_admin","1"):sessionStorage.removeItem("fm_admin")}catch(e){}
+}
+$("gateForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if($("aEmail").value.trim().toLowerCase()===ADMIN_EMAIL&&$("aPw").value===ADMIN_PASS){$("aErr").textContent="";$("aPw").value="";setAuth(true)}
+  else $("aErr").textContent="Wrong email or password";
+});
+$("logout").addEventListener("click",()=>setAuth(false));
+try{if(sessionStorage.getItem("fm_admin")==="1")setAuth(true)}catch(e){}
+render();
+</script>
+</body>
+</html>
